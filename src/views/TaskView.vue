@@ -75,7 +75,6 @@ function moveTask(id: number, status: BoardStatus) {
           </button>
         </div>
         <div class="card-options">
-          <p class="hint">Sortiert nach Datum und Priorität</p>
           <div class="layout-toggle" aria-label="Ansicht auswählen">
             <button
               type="button"
@@ -156,6 +155,7 @@ function moveTask(id: number, status: BoardStatus) {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  margin-left: auto;
 }
 
 .layout-toggle {
