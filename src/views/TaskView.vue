@@ -34,7 +34,6 @@ function toggleDone(id: number) {
 <template>
   <section class="view">
     <header>
-      <p class="eyebrow">Tagesplanung</p>
       <h1>Aufgaben</h1>
     </header>
 

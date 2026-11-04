@@ -15,6 +15,11 @@ const router = createRouter({
       // route level code-splitting: wird erst beim Aufruf der Route geladen
       component: () => import('../views/TaskView.vue'),
     },
+    {
+      path: '/habits',
+      name: 'habits',
+      component: () => import('../views/HabitView.vue'),
+    },
   ],
 })
 
