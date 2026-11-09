@@ -56,19 +56,6 @@ function nextQuote() {
   padding: 14px 18px 6px;
 }
 
-.bubble::before {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 34px;
-  width: 16px;
-  height: 16px;
-  background: #fff4ec;
-  border-left: 1px solid #f5cbb0;
-  border-bottom: 1px solid #f5cbb0;
-  transform: rotate(45deg);
-}
-
 .quote {
   margin: 0;
   font-size: 18px;
