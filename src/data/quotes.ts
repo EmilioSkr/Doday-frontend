@@ -1,5 +1,3 @@
-import * as test from 'node:test'
-
 export interface Quote {
   text: string
   author: string
