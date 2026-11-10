@@ -17,7 +17,7 @@ const sortedTasks = computed(() =>
 )
 const todayTasks = computed(() => sortedTasks.value.filter((t) => t.dueDate === isoDate(0)))
 const upcomingTasks = computed(() =>
-  sortedTasks.value.filter((t) => t.dueDate > isoDate(0) && !t.done),
+  sortedTasks.value.filter((t) => t.dueDate > isoDate(0) && t.status !== 'done'),
 )
 
 function addTask(title: string, dueDate: string, priority: Priority) {
@@ -26,13 +26,13 @@ function addTask(title: string, dueDate: string, priority: Priority) {
     title: title.trim(),
     dueDate,
     priority,
-    done: false,
+    status: 'open',
   })
 }
 
 function toggleTask(id: number) {
   const task = tasks.value.find((t) => t.id === id)
-  if (task) task.done = !task.done
+  if (task) task.status = task.status === 'done' ? 'open' : 'done'
 }
 
 function removeTask(id: number) {

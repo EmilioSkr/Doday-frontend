@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import TaskList from '@/components/TaskList.vue'
+import TaskBoard from '@/components/TaskBoard.vue'
 import { sampleTasks } from '@/data/sampleTasks'
-import type { Task } from '@/types/task'
+import type { Task, TaskStatus } from '@/types/task'
 import { sortTasks } from '@/utils/tasks'
 
 type Filter = 'all' | 'open' | 'done'
-type BoardStatus = 'todo' | 'inProgress' | 'done'
 type Layout = 'list' | 'board'
 
 const filters: { value: Filter; label: string }[] = [
@@ -19,36 +19,29 @@ const filters: { value: Filter; label: string }[] = [
 const tasks = ref<Task[]>(sampleTasks.map((task) => ({ ...task })))
 const filter = ref<Filter>('all')
 const layout = ref<Layout>('list')
-const statuses = ref<Record<number, BoardStatus>>(createStatuses())
-
-function createStatuses(): Record<number, BoardStatus> {
-  const result: Record<number, BoardStatus> = {}
-  for (const task of sampleTasks) {
-    result[task.id] = task.done ? 'done' : 'todo'
-  }
-  return result
-}
 
 const visibleTasks = computed(() =>
   sortTasks(tasks.value).filter(
-    (task) => filter.value === 'all' || (filter.value === 'open' ? !task.done : task.done),
+    (task) =>
+      filter.value === 'all' ||
+      (filter.value === 'open' ? task.status !== 'done' : task.status === 'done'),
   ),
 )
 
 function toggleDone(id: number) {
   const task = tasks.value.find((t) => t.id === id)
   if (task) {
-    task.done = !task.done
-    statuses.value[id] = task.done ? 'done' : 'todo'
+    task.status = task.status === 'done' ? 'open' : 'done'
   }
 }
 
-function moveTask(id: number, status: BoardStatus) {
+function moveTask(id: number, status: TaskStatus) {
   const task = tasks.value.find((item) => item.id === id)
-  if (task) {
-    statuses.value[id] = status
-    task.done = status === 'done'
-  }
+  if (task) task.status = status
+}
+
+function removeTask(id: number) {
+  tasks.value = tasks.value.filter((task) => task.id !== id)
 }
 </script>
 
@@ -97,13 +90,14 @@ function moveTask(id: number, status: BoardStatus) {
           </div>
         </div>
       </div>
-      <TaskList
-        :tasks="layout === 'board' ? sortTasks(tasks) : visibleTasks"
-        :layout="layout"
-        :statuses="statuses"
+      <TaskBoard
+        v-if="layout === 'board'"
+        :tasks="sortTasks(tasks)"
         @toggle="toggleDone"
         @move="moveTask"
+        @remove="removeTask"
       />
+      <TaskList v-else :tasks="visibleTasks" @toggle="toggleDone" />
     </div>
   </section>
 </template>

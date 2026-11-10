@@ -1,46 +1,32 @@
 <script setup lang="ts">
 import TaskItem from './TaskItem.vue'
-import type { Task } from '@/types/task'
-
-// type Layout = 'list' | 'board'
-// type BoardStatus = 'todo' | 'inProgress' | 'done'
+import type { Task, TaskStatus } from '@/types/task'
 
 withDefaults(
   defineProps<{
     tasks: Task[]
     showDue?: boolean
     removable?: boolean
+    showWorkAction?: boolean
     emptyText?: string
   }>(),
   {
     showDue: false,
     removable: false,
+    showWorkAction: false,
     emptyText: 'Keine Aufgaben in dieser Ansicht.',
   },
 )
 
-defineEmits<{ toggle: [id: number]; remove: [id: number] }>()
+const emit = defineEmits<{
+  toggle: [id: number]
+  remove: [id: number]
+  move: [id: number, status: TaskStatus]
+}>()
 
-/*
-const columns: { status: BoardStatus; title: string }[] = [
-  { status: 'todo', title: 'Zu erledigen' },
-  { status: 'inProgress', title: 'In Bearbeitung' },
-  { status: 'done', title: 'Erledigt' },
-]
-
-const boardColumns = computed(() =>
-  columns.map((column) => ({
-    ...column,
-    tasks: props.tasks.filter(
-      (task) => (props.statuses[task.id] ?? (task.done ? 'done' : 'todo')) === column.status,
-    ),
-  })),
-)
-
-function moveTask(id: number, status: BoardStatus) {
+function moveTask(id: number, status: TaskStatus) {
   emit('move', id, status)
 }
- */
 </script>
 
 <template>
@@ -51,8 +37,10 @@ function moveTask(id: number, status: BoardStatus) {
       :task="task"
       :show-due="showDue"
       :removable="removable"
+      :show-work-action="showWorkAction"
       @toggle="$emit('toggle', $event)"
       @remove="$emit('remove', $event)"
+      @move="moveTask"
     />
   </ul>
   <p v-else class="empty">{{ emptyText }}</p>

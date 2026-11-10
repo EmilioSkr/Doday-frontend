@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import CheckButton from './CheckButton.vue'
-import type { Priority, Task } from '@/types/task'
+import type { Priority, Task, TaskStatus } from '@/types/task'
 import { formatDue } from '@/utils/date'
 
-withDefaults(defineProps<{ task: Task; showDue?: boolean; removable?: boolean }>(), {
-  showDue: false,
-  removable: false,
-})
+withDefaults(
+  defineProps<{ task: Task; showDue?: boolean; removable?: boolean; showWorkAction?: boolean }>(),
+  {
+    showDue: false,
+    removable: false,
+    showWorkAction: false,
+  },
+)
 
-defineEmits<{ toggle: [id: number]; remove: [id: number] }>()
+defineEmits<{
+  toggle: [id: number]
+  remove: [id: number]
+  move: [id: number, status: TaskStatus]
+}>()
 
 const prio: Record<Priority, { label: string; cls: string }> = {
   MUST_DO: { label: 'Must-Do', cls: 'must' },
@@ -18,15 +26,23 @@ const prio: Record<Priority, { label: string; cls: string }> = {
 </script>
 
 <template>
-  <li class="row" :class="{ done: task.done }">
+  <li class="row" :class="{ done: task.status === 'done' }">
     <CheckButton
-      :checked="task.done"
+      :checked="task.status === 'done'"
       :label="`${task.title} erledigt`"
       @toggle="$emit('toggle', task.id)"
     />
     <span class="title">{{ task.title }}</span>
     <span v-if="showDue" class="due">{{ formatDue(task.dueDate) }}</span>
     <span class="chip" :class="prio[task.priority].cls">{{ prio[task.priority].label }}</span>
+    <button
+      v-if="showWorkAction && task.status !== 'done'"
+      type="button"
+      class="work-action"
+      @click="$emit('move', task.id, task.status === 'inProgress' ? 'open' : 'inProgress')"
+    >
+      {{ task.status === 'inProgress' ? 'Zurück zu offen' : 'In Bearbeitung' }}
+    </button>
     <button
       v-if="removable"
       type="button"
@@ -114,6 +130,19 @@ const prio: Record<Priority, { label: string; cls: string }> = {
   align-items: center;
   justify-content: center;
   color: #5b6b78;
+  cursor: pointer;
+}
+
+.work-action {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 </style>
