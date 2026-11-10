@@ -1,91 +1,70 @@
 <script setup lang="ts">
+import CheckButton from './CheckButton.vue'
 import type { Priority, Task } from '@/types/task'
-import { formatDueDate, priorityLabel } from '@/utils/format'
+import { formatDue } from '@/utils/date'
 
-defineProps<{ task: Task }>()
+withDefaults(defineProps<{ task: Task; showDue?: boolean; removable?: boolean }>(), {
+  showDue: false,
+  removable: false,
+})
 
-const emit = defineEmits<{ toggle: [id: number] }>()
+defineEmits<{ toggle: [id: number]; remove: [id: number] }>()
 
-const priorityClass: Record<Priority, string> = {
-  MUST_DO: 'must',
-  NORMAL: 'normal',
-  OPTIONAL: 'optional',
+const prio: Record<Priority, { label: string; cls: string }> = {
+  MUST_DO: { label: 'Must-Do', cls: 'must' },
+  NORMAL: { label: 'Normal', cls: 'normal' },
+  OPTIONAL: { label: 'Optional', cls: 'optional' },
 }
 </script>
 
 <template>
-  <li class="task" :class="{ done: task.done }">
-    <button
-      type="button"
-      class="check"
-      :aria-pressed="task.done"
-      :aria-label="`Erledigt: ${task.title}`"
-      @click="emit('toggle', task.id)"
-    >
-      <span class="box" :class="{ on: task.done }">
-        <svg
-          v-if="task.done"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#fff"
-          stroke-width="3.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <polyline points="5 12 10 17 19 7" />
-        </svg>
-      </span>
-    </button>
+  <li class="row" :class="{ done: task.done }">
+    <CheckButton
+      :checked="task.done"
+      :label="`${task.title} erledigt`"
+      @toggle="$emit('toggle', task.id)"
+    />
     <span class="title">{{ task.title }}</span>
-    <span class="due">{{ formatDueDate(task.dueDate) }}</span>
-    <span class="chip" :class="priorityClass[task.priority]">{{
-      priorityLabel(task.priority)
-    }}</span>
+    <span v-if="showDue" class="due">{{ formatDue(task.dueDate) }}</span>
+    <span class="chip" :class="prio[task.priority].cls">{{ prio[task.priority].label }}</span>
+    <button
+      v-if="removable"
+      type="button"
+      class="remove"
+      :aria-label="`${task.title} löschen`"
+      @click="$emit('remove', task.id)"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 7h16" />
+        <path d="M9 7V4h6v3" />
+        <path d="M6 7l1 13h10l1-13" />
+      </svg>
+    </button>
   </li>
 </template>
 
 <style scoped>
-.task {
+.row {
   display: flex;
   align-items: center;
-  gap: 4px;
   flex-wrap: wrap;
+  gap: 4px;
   border-top: 1px solid #edf1f4;
   list-style: none;
 }
 
-.check {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.box {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  border: 2px solid #7c8b98;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.box.on {
-  background: var(--teal);
-  border-color: var(--teal);
-}
-
 .title {
-  flex: 1 1 200px;
+  flex: 1 1 180px;
   min-width: 0;
   font-size: 15px;
   font-weight: 600;
@@ -97,7 +76,7 @@ const priorityClass: Record<Priority, string> = {
 }
 
 .due {
-  min-width: 88px;
+  min-width: 64px;
   font-size: 13px;
   font-weight: 700;
   color: var(--ink-soft);
@@ -108,7 +87,7 @@ const priorityClass: Record<Priority, string> = {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
-  margin-right: 8px;
+  margin-right: 4px;
 }
 
 .chip.must {
@@ -124,5 +103,17 @@ const priorityClass: Record<Priority, string> = {
 .chip.optional {
   background: #e6e9ed;
   color: #424f5b;
+}
+
+.remove {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5b6b78;
+  cursor: pointer;
 }
 </style>
