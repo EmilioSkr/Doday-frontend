@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import TaskList from '@/components/TaskList.vue'
+import AddTaskForm from '@/components/AddTaskForm.vue'
+import DropdownButton from '@/components/DropdownButton.vue'
 import TaskBoard from '@/components/TaskBoard.vue'
+import TaskList from '@/components/TaskList.vue'
 import { sampleTasks } from '@/data/sampleTasks'
 import type { Task, TaskStatus } from '@/types/task'
 import { sortTasks } from '@/utils/tasks'
@@ -15,7 +17,7 @@ const filters: { value: Filter; label: string }[] = [
   { value: 'done', label: 'Erledigt' },
 ]
 
-// Kopie der Beispieldaten, damit die Originale unverändert bleiben
+// Zustand aus dem zweiten Quelltext
 const tasks = ref<Task[]>(sampleTasks.map((task) => ({ ...task })))
 const filter = ref<Filter>('all')
 const layout = ref<Layout>('list')
@@ -43,62 +45,98 @@ function moveTask(id: number, status: TaskStatus) {
 function removeTask(id: number) {
   tasks.value = tasks.value.filter((task) => task.id !== id)
 }
+
+// Steuerung für das Dropdown-Formular
+const isAddFormOpen = ref(false)
+const closeForm = () => {
+  isAddFormOpen.value = false
+}
 </script>
 
 <template>
   <section class="view">
-    <header>
-      <h1>Aufgaben</h1>
+    <header class="page-head">
+      <div>
+        <p class="eyebrow">Tagesplanung</p>
+        <h1>Aufgaben</h1>
+      </div>
+      <DropdownButton
+        label="Aufgabe hinzufügen"
+        :open="isAddFormOpen"
+        @toggle="isAddFormOpen = !isAddFormOpen"
+        v-slot="{ close }"
+      >
+        <AddTaskForm
+          autofocus
+          @added="
+            () => {
+              close?.()
+              closeForm()
+            }
+          "
+        />
+      </DropdownButton>
     </header>
 
-    <div class="card">
-      <div class="card-head">
-        <div v-if="layout === 'list'" class="pills">
+    <div class="card-head">
+      <div v-if="layout === 'list'" class="pills">
+        <button
+          v-for="f in filters"
+          :key="f.value"
+          type="button"
+          class="pill"
+          :class="{ on: filter === f.value }"
+          :aria-pressed="filter === f.value"
+          :data-test="`filter-${f.value}`"
+          @click="filter = f.value"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+      <div v-else></div>
+
+      <div class="card-options">
+        <div class="layout-toggle" aria-label="Ansicht auswählen">
           <button
-            v-for="f in filters"
-            :key="f.value"
             type="button"
-            class="pill"
-            :class="{ on: filter === f.value }"
-            :aria-pressed="filter === f.value"
-            :data-test="`filter-${f.value}`"
-            @click="filter = f.value"
+            class="layout-button"
+            :class="{ on: layout === 'list' }"
+            :aria-pressed="layout === 'list'"
+            @click="layout = 'list'"
           >
-            {{ f.label }}
+            Liste
+          </button>
+          <button
+            type="button"
+            class="layout-button"
+            :class="{ on: layout === 'board' }"
+            :aria-pressed="layout === 'board'"
+            @click="layout = 'board'"
+          >
+            Board
           </button>
         </div>
-        <div class="card-options">
-          <div class="layout-toggle" aria-label="Ansicht auswählen">
-            <button
-              type="button"
-              class="layout-button"
-              :class="{ on: layout === 'list' }"
-              :aria-pressed="layout === 'list'"
-              @click="layout = 'list'"
-            >
-              Liste
-            </button>
-            <button
-              type="button"
-              class="layout-button"
-              :class="{ on: layout === 'board' }"
-              :aria-pressed="layout === 'board'"
-              @click="layout = 'board'"
-            >
-              Board
-            </button>
-          </div>
-        </div>
       </div>
-      <TaskBoard
-        v-if="layout === 'board'"
-        :tasks="sortTasks(tasks)"
+    </div>
+
+    <TaskBoard
+      v-if="layout === 'board'"
+      :tasks="sortTasks(tasks)"
+      @toggle="toggleDone"
+      @move="moveTask"
+      @remove="removeTask"
+    />
+
+    <section v-else class="card">
+      <TaskList
+        :tasks="visibleTasks"
+        show-due
+        removable
+        empty-text="Keine Aufgaben in dieser Ansicht."
         @toggle="toggleDone"
-        @move="moveTask"
         @remove="removeTask"
       />
-      <TaskList v-else :tasks="visibleTasks" @toggle="toggleDone" />
-    </div>
+    </section>
   </section>
 </template>
 
@@ -109,7 +147,7 @@ function removeTask(id: number) {
   gap: 12px;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
 .pills {
@@ -134,13 +172,6 @@ function removeTask(id: number) {
   border-color: var(--ink);
   background: var(--ink);
   color: #fff;
-}
-
-.hint {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft);
 }
 
 .card-options {
