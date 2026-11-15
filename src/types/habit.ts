@@ -1,5 +1,5 @@
 export interface Habit {
   id: number
-  title: string
+  name: string
   done: boolean
 }
