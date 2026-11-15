@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AddHabitForm from '@/components/AddHabitForm.vue'
 import AddTaskForm from '@/components/AddTaskForm.vue'
@@ -7,13 +8,23 @@ import HabitList from '@/components/HabitList.vue'
 import TaskList from '@/components/TaskList.vue'
 import { useHabits } from '@/composables/useHabits'
 import { useTasks } from '@/composables/useTasks'
+import { quotes } from '@/data/quotes'
 import { lastSevenDayLabels, todayLong } from '@/utils/date'
+import { pickQuote } from '@/utils/quotes'
 
 const { todayTasks, upcomingTasks, toggleTask } = useTasks()
 const { habits, total, doneCount, allDone, percent, streak, longestStreak, hint, toggleHabit } =
   useHabits()
 
 const labels = lastSevenDayLabels()
+const quoteOffset = ref(0)
+const quote = computed(() =>
+  pickQuote(quotes, Math.floor(Date.now() / 86_400_000), quoteOffset.value),
+)
+
+function showNextQuote() {
+  quoteOffset.value += 1
+}
 </script>
 
 <template>
@@ -36,6 +47,14 @@ const labels = lastSevenDayLabels()
           </div>
         </div>
         <p class="small-text">Längster Streak: {{ longestStreak }} Tage</p>
+      </section>
+
+      <section class="card quote-card" aria-label="Zitat des Tages">
+        <blockquote aria-live="polite">
+          <p>„{{ quote.text }}“</p>
+          <cite v-if="quote.author">— {{ quote.author }}</cite>
+        </blockquote>
+        <button class="quote-button" type="button" @click="showNextQuote">Neues Zitat</button>
       </section>
 
       <section class="card">
@@ -104,6 +123,7 @@ const labels = lastSevenDayLabels()
 
 .grid.small {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
 }
 
 .flame-card {
@@ -168,6 +188,42 @@ const labels = lastSevenDayLabels()
   margin: 0;
   font-size: 13px;
   font-weight: 600;
+}
+
+.quote-card {
+  justify-content: space-between;
+}
+
+.quote-card blockquote {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quote-card blockquote p {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.quote-card cite {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.quote-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .card-label {
