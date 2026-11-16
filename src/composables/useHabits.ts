@@ -1,12 +1,30 @@
 import { computed, ref } from 'vue'
-import { sampleHabits } from '@/data/sampleHabits'
 import type { Habit } from '@/types/habit'
+import { apiErrorMessage, getJson, sendJson } from '@/utils/api'
 
-// Kopie der Beispieldaten, damit die Originale unverändert bleiben
-const habits = ref<Habit[]>(sampleHabits.map((h) => ({ ...h })))
-let nextId = Math.max(0, ...sampleHabits.map((h) => h.id)) + 1
+interface HabitResponse {
+  id: number
+  name: string
+  done: boolean
+}
 
-// Beispielwerte, die Streaks werden später im Backend berechnet
+const habits = ref<Habit[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+async function loadHabits() {
+  loading.value = true
+  error.value = null
+  try {
+    habits.value = await getJson<HabitResponse[]>('/api/habits')
+  } catch (cause) {
+    error.value = apiErrorMessage(cause)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Beispielwerte, die Streaks werden später im Backend berechnet.
 const baseStreak = 12
 const longestStreak = 21
 
@@ -24,18 +42,46 @@ const hint = computed(() =>
     : `Noch ${remaining.value} Gewohnheit${remaining.value === 1 ? '' : 'en'} bis zur nächsten Flamme.`,
 )
 
-function addHabit(name: string) {
-  habits.value.push({ id: nextId++, name: name.trim(), done: false })
+async function addHabit(name: string): Promise<boolean> {
+  error.value = null
+  try {
+    const created = await sendJson<HabitResponse>('/api/habits', 'POST', {
+      name: name.trim(),
+      done: false,
+    })
+    habits.value.push(created)
+    return true
+  } catch (cause) {
+    error.value = apiErrorMessage(cause)
+    return false
+  }
 }
 
-function toggleHabit(id: number) {
+async function toggleHabit(id: number): Promise<boolean> {
   const habit = habits.value.find((h) => h.id === id)
-  if (habit) habit.done = !habit.done
+  if (!habit) return false
+
+  error.value = null
+  try {
+    const updated = await sendJson<HabitResponse>(`/api/habits/${id}`, 'PUT', {
+      name: habit.name,
+      done: !habit.done,
+    })
+    const index = habits.value.findIndex((item) => item.id === id)
+    if (index !== -1) habits.value[index] = updated
+    return true
+  } catch (cause) {
+    error.value = apiErrorMessage(cause)
+    return false
+  }
 }
 
 export function useHabits() {
   return {
     habits,
+    loading,
+    error,
+    loadHabits,
     total,
     doneCount,
     allDone,

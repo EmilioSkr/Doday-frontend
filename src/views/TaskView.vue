@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AddTaskForm from '@/components/AddTaskForm.vue'
 import DropdownButton from '@/components/DropdownButton.vue'
 import TaskBoard from '@/components/TaskBoard.vue'
 import TaskList from '@/components/TaskList.vue'
-import { sampleTasks } from '@/data/sampleTasks'
-import type { Task, TaskStatus } from '@/types/task'
-import { sortTasks } from '@/utils/tasks'
+import { useTasks } from '@/composables/useTasks'
 
 type Filter = 'all' | 'open' | 'done'
 type Layout = 'list' | 'board'
@@ -17,34 +15,22 @@ const filters: { value: Filter; label: string }[] = [
   { value: 'done', label: 'Erledigt' },
 ]
 
-// Zustand aus dem zweiten Quelltext
-const tasks = ref<Task[]>(sampleTasks.map((task) => ({ ...task })))
+const { sortedTasks, loading, error: apiError, loadTasks, toggleTask, moveTask, removeTask } =
+  useTasks()
 const filter = ref<Filter>('all')
 const layout = ref<Layout>('list')
 
 const visibleTasks = computed(() =>
-  sortTasks(tasks.value).filter(
+  sortedTasks.value.filter(
     (task) =>
       filter.value === 'all' ||
       (filter.value === 'open' ? task.status !== 'done' : task.status === 'done'),
   ),
 )
 
-function toggleDone(id: number) {
-  const task = tasks.value.find((t) => t.id === id)
-  if (task) {
-    task.status = task.status === 'done' ? 'open' : 'done'
-  }
-}
-
-function moveTask(id: number, status: TaskStatus) {
-  const task = tasks.value.find((item) => item.id === id)
-  if (task) task.status = status
-}
-
-function removeTask(id: number) {
-  tasks.value = tasks.value.filter((task) => task.id !== id)
-}
+onMounted(() => {
+  void loadTasks()
+})
 
 // Steuerung für das Dropdown-Formular
 const isAddFormOpen = ref(false)
@@ -55,6 +41,8 @@ const closeForm = () => {
 
 <template>
   <section class="view">
+    <p v-if="apiError" role="alert" class="api-error">{{ apiError }}</p>
+    <p v-if="loading" role="status">Aufgaben werden geladen …</p>
     <header class="page-head">
       <div>
         <p class="eyebrow">Tagesplanung</p>
@@ -121,8 +109,8 @@ const closeForm = () => {
 
     <TaskBoard
       v-if="layout === 'board'"
-      :tasks="sortTasks(tasks)"
-      @toggle="toggleDone"
+      :tasks="sortedTasks"
+      @toggle="toggleTask"
       @move="moveTask"
       @remove="removeTask"
     />
@@ -133,7 +121,7 @@ const closeForm = () => {
         show-due
         removable
         empty-text="Keine Aufgaben in dieser Ansicht."
-        @toggle="toggleDone"
+        @toggle="toggleTask"
         @remove="removeTask"
       />
     </section>

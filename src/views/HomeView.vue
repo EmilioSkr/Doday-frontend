@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AddHabitForm from '@/components/AddHabitForm.vue'
 import AddTaskForm from '@/components/AddTaskForm.vue'
@@ -12,9 +12,32 @@ import { quotes } from '@/data/quotes'
 import { lastSevenDayLabels, todayLong } from '@/utils/date'
 import { pickQuote } from '@/utils/quotes'
 
-const { todayTasks, upcomingTasks, toggleTask } = useTasks()
-const { habits, total, doneCount, allDone, percent, streak, longestStreak, hint, toggleHabit } =
-  useHabits()
+const {
+  todayTasks,
+  upcomingTasks,
+  loading: tasksLoading,
+  error: tasksError,
+  loadTasks,
+  toggleTask,
+} = useTasks()
+const {
+  habits,
+  total,
+  doneCount,
+  allDone,
+  percent,
+  streak,
+  longestStreak,
+  hint,
+  loading: habitsLoading,
+  error: habitsError,
+  loadHabits,
+  toggleHabit,
+} = useHabits()
+
+onMounted(() => {
+  void Promise.all([loadTasks(), loadHabits()])
+})
 
 const labels = lastSevenDayLabels()
 const quoteOffset = ref(0)
@@ -29,6 +52,9 @@ function showNextQuote() {
 
 <template>
   <section class="view">
+    <p v-if="tasksError" role="alert" class="api-error">Aufgaben: {{ tasksError }}</p>
+    <p v-if="habitsError" role="alert" class="api-error">Gewohnheiten: {{ habitsError }}</p>
+    <p v-if="tasksLoading || habitsLoading" role="status">Daten werden geladen …</p>
     <header>
       <p class="eyebrow">{{ todayLong() }}</p>
       <h1>Dein Tag im Überblick</h1>

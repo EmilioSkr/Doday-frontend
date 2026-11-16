@@ -35,6 +35,30 @@ npm install
 npm run dev
 ```
 
+### Backend-Verbindung
+
+Das Frontend verwendet die REST-Endpunkte des Backends `/api/tasks` und `/api/habits`.
+Die Views laden die Daten beim Öffnen; die gemeinsamen API-Aufrufe und CRUD-Operationen
+liegen in den Composables und `src/utils/api.ts`.
+
+Lokal zeigt `.env.development` auf `http://localhost:8080`. Für Render in den
+Environment-Einstellungen der **Frontend Static Site** `VITE_BACKEND_BASE_URL` auf
+die öffentliche URL des **Backend Web Service** setzen, zum Beispiel:
+
+```env
+VITE_BACKEND_BASE_URL=https://<dein-backend-service>.onrender.com
+```
+
+Die URL ohne abschließenden Schrägstrich eintragen und die Static Site danach neu
+deployen, da Vite die Variable beim Build einliest. Das Backend muss außerdem
+CORS-Anfragen von der genauen Frontend-URL zulassen; die Freigabe muss im Backend-Code
+konfiguriert sein, nicht nur als Environment-Variable.
+
+Das Backend liefert Aufgaben mit `done` (Boolean), während das Frontend intern
+`status` verwendet. Beim Speichern wird `done` übertragen und beim Laden in den
+Frontend-Status übersetzt. Das Backend-Modell speichert derzeit keinen Status
+„In Bearbeitung“ separat.
+
 ### Type-Check, Compile and Minify for Production
 
 ```sh

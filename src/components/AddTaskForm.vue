@@ -18,12 +18,13 @@ onMounted(() => {
   if (props.autofocus) titleInput.value?.focus()
 })
 
-function submit() {
+async function submit() {
   if (!title.value.trim()) {
     error.value = true
     return
   }
-  addTask(title.value, dueDate.value, priority.value)
+  const added = await addTask(title.value, dueDate.value, priority.value)
+  if (!added) return
   title.value = ''
   emit('added')
 }

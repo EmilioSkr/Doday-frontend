@@ -14,12 +14,13 @@ onMounted(() => {
   if (props.autofocus) nameInput.value?.focus()
 })
 
-function submit() {
+async function submit() {
   if (!name.value.trim()) {
     error.value = true
     return
   }
-  addHabit(name.value)
+  const added = await addHabit(name.value)
+  if (!added) return
   name.value = ''
   emit('added')
 }
